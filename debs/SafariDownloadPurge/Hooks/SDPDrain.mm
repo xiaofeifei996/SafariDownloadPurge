@@ -6,6 +6,7 @@
 #import "SDPConfig.h"
 #import "SDPDebug.h"
 #import "SDPProtect.h"
+#import "SDPToast.h"
 
 // A removal can fail when Safari lacks the sandbox extension for the Downloads
 // container. Those paths are queued and retried in this same process, so the
