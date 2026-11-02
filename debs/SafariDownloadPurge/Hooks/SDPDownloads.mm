@@ -85,7 +85,7 @@ static NSString *SDPReasonFor(NSArray *removing) {
 
 static void SDPHandleRemoval(NSArray *removing, NSString *reason) {
     [SDPConfig sdp_synchronize];
-    BOOL enabled = [SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES];
+    BOOL enabled = [SDPConfig sdp_purgeEnabled];
     NSArray<NSString *> *paths = SDPPathsOf(removing);
     [SDPDebug sdp_log:@"remove reason=%@ count=%lu enabled=%@ paths=%@",
      reason, (unsigned long)removing.count, enabled ? @"YES" : @"NO", paths];
@@ -109,7 +109,7 @@ static void SDPHandleRemoval(NSArray *removing, NSString *reason) {
 // Restores after the original method has run, when Safari may have unlinked.
 static void SDPFinishRemoval(NSArray *removing) {
     [SDPConfig sdp_synchronize];
-    if ([SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
+    if ([SDPConfig sdp_purgeEnabled]) {
         return;
     }
     NSArray<NSString *> *paths = SDPPathsOf(removing);
@@ -170,7 +170,7 @@ static void SDPRemoveDownloadsAfterDate(id self, SEL _cmd, NSDate *date) {
 // Single-record deletion on newer builds; the file is unlinked here directly.
 static BOOL SDPRemoveFromDisk(id self, SEL _cmd) {
     [SDPConfig sdp_synchronize];
-    BOOL enabled = [SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES];
+    BOOL enabled = [SDPConfig sdp_purgeEnabled];
     NSArray<NSString *> *paths = SDPPathsOf(@[self]);
     [SDPDebug sdp_log:@"removeFromDisk enabled=%@ paths=%@", enabled ? @"YES" : @"NO", paths];
     if (enabled) {
@@ -187,7 +187,7 @@ static BOOL SDPRemoveFromDisk(id self, SEL _cmd) {
 
 static void SDPRemoveDataFromDisk(id self, SEL _cmd) {
     [SDPConfig sdp_synchronize];
-    BOOL enabled = [SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES];
+    BOOL enabled = [SDPConfig sdp_purgeEnabled];
     NSArray<NSString *> *paths = SDPPathsOf(@[self]);
     [SDPDebug sdp_log:@"removeDataAndPlaceholder enabled=%@ paths=%@",
      enabled ? @"YES" : @"NO", paths];

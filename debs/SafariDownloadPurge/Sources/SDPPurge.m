@@ -181,7 +181,7 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
     // Gate on the live value at the moment of deletion: a stale snapshot here
     // makes the master switch look broken.
     [SDPConfig sdp_synchronize];
-    if (![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
+    if (![SDPConfig sdp_purgeEnabled]) {
         [SDPDebug sdp_log:@"未执行：总开关关闭"];
         return @[];
     }

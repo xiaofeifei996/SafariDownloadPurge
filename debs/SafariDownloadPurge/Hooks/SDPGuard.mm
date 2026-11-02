@@ -68,8 +68,7 @@ static BOOL SDPShouldBlock(NSString *path) {
     if (!SDPPathIsProtected(path)) {
         return NO;
     }
-    [SDPConfig sdp_synchronize];
-    return ![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES];
+    return ![SDPConfig sdp_purgeEnabled];
 }
 
 static BOOL SDPDeny(NSString *path, NSError **error) {

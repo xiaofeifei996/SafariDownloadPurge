@@ -3,14 +3,21 @@
 static NSString *const SDPPreferenceFile = @"com.axs.safaridownloadpurge.plist";
 static NSString *const SDPRelative = @"Library/Preferences/com.axs.safaridownloadpurge.plist";
 
+// A single flat file outside every sandbox. Both the Settings panel and the
+// injected Safari process can reach it, so it is the one place that always
+// agrees. Everything else is only a mirror kept for compatibility.
+static NSString *const SDPSharedFlagDirectory = @"/var/mobile/Library/SafariDownloadPurge";
+
+static NSString *SDPSharedFlagPath(void) {
+    return [SDPSharedFlagDirectory stringByAppendingPathComponent:@"state.plist"];
+}
+
 static NSArray<NSString *> *SDPContainerPaths(void);
 
-// Data containers of the processes this tweak is injected into. A sandboxed app
-// can be denied the shared domain and end up reading its own container copy, so
-// the panel has to keep those copies in sync too.
+// Data containers of the processes this tweak is injected into. Enumerating
+// them needs read access to the container root, which Settings does not always
+// have, so this list is advisory: the shared flag file is what decides.
 static NSArray<NSString *> *SDPContainerPaths(void) {
-    // Containers appear and disappear while the device runs, so the result is
-    // memoised briefly instead of once per process.
     static NSArray<NSString *> *memo;
     static NSTimeInterval memoTime;
     static NSLock *lock;
@@ -58,6 +65,18 @@ NSString *SDPCanonicalPreferencePath(void) {
     return [@"/var/mobile/Library/Preferences/" stringByAppendingPathComponent:SDPPreferenceFile];
 }
 
+NSString *SDPSharedStatePath(void) {
+    return SDPSharedFlagPath();
+}
+
+NSArray<NSString *> *SDPSharedStatePaths(void) {
+    return @[
+        SDPSharedFlagPath(),
+        [@"/var/jb/var/mobile/Library/Preferences" stringByAppendingPathComponent:SDPPreferenceFile],
+        SDPCanonicalPreferencePath(),
+    ];
+}
+
 // Shared copies, including the RootHide per-boot root when present.
 static NSArray<NSString *> *SDPSharedPreferencePaths(void) {
     NSMutableArray<NSString *> *files = [NSMutableArray array];
@@ -86,6 +105,9 @@ NSArray<NSString *> *SDPInjectedContainerPreferencePaths(void) {
 
 NSArray<NSString *> *SDPPreferenceReadPaths(void) {
     NSMutableArray<NSString *> *paths = [NSMutableArray array];
+    // The flat shared file comes first: it is the only copy that is guaranteed
+    // to be visible from inside Safari's sandbox and from Settings alike.
+    [paths addObjectsFromArray:SDPSharedStatePaths()];
     [paths addObjectsFromArray:SDPContainerPaths()];
     [paths addObjectsFromArray:SDPSharedPreferencePaths()];
     return paths;
@@ -93,6 +115,7 @@ NSArray<NSString *> *SDPPreferenceReadPaths(void) {
 
 NSArray<NSString *> *SDPPreferenceWritePaths(void) {
     NSMutableArray<NSString *> *paths = [NSMutableArray array];
+    [paths addObject:SDPSharedFlagPath()];
     [paths addObject:SDPCanonicalPreferencePath()];
     [paths addObjectsFromArray:SDPContainerPaths()];
     for (NSString *path in SDPSharedPreferencePaths()) {

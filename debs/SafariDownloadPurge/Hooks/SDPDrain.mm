@@ -53,7 +53,7 @@ static void SDPPreParkAllDownloads(void) {
 
 static void SDPRestoreProtectedFiles(void) {
     [SDPConfig sdp_synchronize];
-    if ([SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
+    if ([SDPConfig sdp_purgeEnabled]) {
         return;
     }
     NSString *root = nil;
@@ -83,7 +83,7 @@ static void SDPRestoreProtectedFiles(void) {
 
 static void SDPDrainNow(void) {
     [SDPConfig sdp_synchronize];
-    if (![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
+    if (![SDPConfig sdp_purgeEnabled]) {
         // Drop the backlog instead of holding deletions the user cancelled.
         if ([SDPQueue sdp_pendingCount] > 0) {
             [SDPQueue sdp_discardPendingPaths];

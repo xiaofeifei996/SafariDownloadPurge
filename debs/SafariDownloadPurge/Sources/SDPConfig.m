@@ -95,9 +95,21 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
     CFPreferencesAppSynchronize((__bridge CFStringRef)SDPDomainName);
 }
 
++ (NSDictionary *)sdp_sharedState {
+    NSDictionary *state = [NSDictionary dictionaryWithContentsOfFile:SDPSharedStatePath()];
+    return [state isKindOfClass:[NSDictionary class]] ? state : nil;
+}
+
 + (BOOL)sdp_boolForKey:(NSString *)key defaultValue:(BOOL)defaultValue {
     if (key.length == 0) {
         return defaultValue;
+    }
+    // The flat shared file is authoritative: it is the only copy both Safari and
+    // Settings are guaranteed to see.
+    NSDictionary *shared = [self sdp_sharedState];
+    id sharedValue = shared[key];
+    if (sharedValue) {
+        return SDPBoolFromObject(sharedValue);
     }
     // The on-disk copies are read on every call: Safari caches its preferences
     // for the whole process lifetime, so trusting the daemon first kept a stale
@@ -112,6 +124,11 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
         return SDPBoolFromObject(cached);
     }
     return defaultValue;
+}
+
++ (BOOL)sdp_purgeEnabled {
+    [self sdp_synchronize];
+    return [self sdp_boolForKey:@"enabled" defaultValue:NO];
 }
 
 + (NSString *)sdp_stringForKey:(NSString *)key {
@@ -161,6 +178,8 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
     // Every copy must agree. A single stale copy used to win depending on which
     // process read it, which made the master switch look dead.
     NSFileManager *manager = [NSFileManager defaultManager];
+    [manager createDirectoryAtPath:[SDPSharedStatePath() stringByDeletingLastPathComponent]
+       withIntermediateDirectories:YES attributes:nil error:NULL];
     for (NSString *path in SDPPreferenceWritePaths()) {
         NSMutableDictionary *values = nil;
         NSDictionary *existing = [NSDictionary dictionaryWithContentsOfFile:path];
@@ -176,6 +195,13 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
            withIntermediateDirectories:YES attributes:nil error:NULL];
         [values writeToFile:path atomically:YES];
     }
+
+    // Read the shared file back: if the sandbox refused the write, the switch
+    // would look flipped in Settings while Safari kept the old behaviour.
+    NSDictionary *verify = [NSDictionary dictionaryWithContentsOfFile:SDPSharedStatePath()];
+    BOOL stored = [[verify[key] description] length] > 0;
+    [SDPDebug sdp_log:@"写入 %@=%@ 共享文件%@", key, number,
+     stored ? @"成功" : @"失败（Safari 可能读不到）"];
 
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                          CFSTR("com.axs.safaridownloadpurge.preferences-changed"),
@@ -203,7 +229,7 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
 }
 
 + (NSString *)sdp_diagnostics {
-    BOOL enabled = [self sdp_boolForKey:@"enabled" defaultValue:YES];
+    BOOL enabled = [self sdp_boolForKey:@"enabled" defaultValue:NO];
     return [NSString stringWithFormat:@"当前生效：enabled = %@\n\n%@",
             enabled ? @"YES（会删除文件）" : @"NO（只清记录）",
             [self sdp_storeSummary]];

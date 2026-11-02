@@ -8,6 +8,11 @@
 @interface SDPConfig : NSObject
 
 + (BOOL)sdp_boolForKey:(NSString *)key defaultValue:(BOOL)defaultValue;
+
+// Master switch read for destructive decisions. Returns NO whenever the stored
+// value cannot be determined, so a broken preference store can never lead to a
+// deletion the user did not ask for.
++ (BOOL)sdp_purgeEnabled;
 + (void)sdp_setBool:(BOOL)value forKey:(NSString *)key;
 
 + (NSString *)sdp_stringForKey:(NSString *)key;
