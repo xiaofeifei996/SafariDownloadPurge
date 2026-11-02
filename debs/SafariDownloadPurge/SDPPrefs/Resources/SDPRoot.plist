@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>title</key><string>Safari 下载清除同步</string>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key><string>PSGroupCell</string>
+			<key>label</key><string>总开关</string>
+			<key>footerText</key><string>关闭后仅在 Safari 清除下载记录，磁盘文件保持不动。</string>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSSwitchCell</string>
+			<key>label</key><string>启用插件</string>
+			<key>key</key><string>enabled</string>
+			<key>defaults</key><string>com.axs.safaridownloadpurge</string>
+			<key>default</key><true/>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSGroupCell</string>
+			<key>label</key><string>清除场景</string>
+			<key>footerText</key><string>分别控制“清除单个下载”和“清除全部下载”。多选删除按单个处理。</string>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSSwitchCell</string>
+			<key>label</key><string>单个清除时删除文件</string>
+			<key>key</key><string>purgeSingle</string>
+			<key>defaults</key><string>com.axs.safaridownloadpurge</string>
+			<key>default</key><true/>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSSwitchCell</string>
+			<key>label</key><string>清除全部时删除文件</string>
+			<key>key</key><string>purgeClearAll</string>
+			<key>defaults</key><string>com.axs.safaridownloadpurge</string>
+			<key>default</key><true/>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSGroupCell</string>
+			<key>label</key><string>安全策略</string>
+			<key>footerText</key><string>安装包（ipa、deb、dmg 等）默认保留在“文件”App 中，避免误删要存档的文件；关闭后所有类型一视同仁。</string>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSSwitchCell</string>
+			<key>label</key><string>保留安装包与压缩包</string>
+			<key>key</key><string>keepInstallers</string>
+			<key>defaults</key><string>com.axs.safaridownloadpurge</string>
+			<key>default</key><true/>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSSwitchCell</string>
+			<key>label</key><string>只记录不删除（调试）</string>
+			<key>key</key><string>logOnly</string>
+			<key>defaults</key><string>com.axs.safaridownloadpurge</string>
+			<key>default</key><false/>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSGroupCell</string>
+			<key>label</key><string>说明</string>
+			<key>footerText</key><string>插件作用于 Safari 的下载列表。删除前会核对文件位于下载目录且没有其他下载记录引用；修改设置后无需重启 Safari。</string>
+		</dict>
+	</array>
+</dict>
+</plist>
