@@ -8,4 +8,7 @@
 + (void)sdp_showRemovedCount:(NSUInteger)count;
 + (void)sdp_showProtectedCount:(NSUInteger)count;
 
+// Describes what actually happened: "保留安装包 1 个", "只记录 2 个" ...
++ (void)sdp_showReport:(NSDictionary<NSString *, NSNumber *> *)report;
+
 @end

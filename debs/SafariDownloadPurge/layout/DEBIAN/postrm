@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
 
+# No SpringBoard restart on removal either: unloading a tweak does not require
+# a respring, and forcing one interrupts whatever the user was doing.
 killall -9 MobileSafari 2>/dev/null || true
-killall -9 SpringBoard 2>/dev/null || true
 
 exit 0

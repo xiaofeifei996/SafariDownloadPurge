@@ -89,13 +89,14 @@ static void SDPHandleRemoval(NSArray *removing, NSString *reason) {
      reason, (unsigned long)removing.count, enabled ? @"YES" : @"NO", paths];
 
     if (enabled) {
-        NSArray<NSString *> *removed = [SDPPurge sdp_purgeDownloads:removing reason:reason];
-        [SDPDebug sdp_log:@"删除结果：%lu 个", (unsigned long)removed.count];
-        if (removed.count > 0) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SDPToast sdp_showRemovedCount:removed.count];
-            });
-        }
+        NSDictionary *report = nil;
+        NSArray<NSString *> *removed =
+            [SDPPurge sdp_purgeDownloads:removing reason:reason report:&report];
+        [SDPDebug sdp_log:@"删除结果：%lu 个 明细：%@",
+         (unsigned long)removed.count, report ?: @{}];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SDPToast sdp_showReport:report ?: @{}];
+        });
     } else {
         // Protection: keep the bytes alive across Safari's own deletion.
         NSUInteger parked = [SDPProtect sdp_stashPaths:paths];

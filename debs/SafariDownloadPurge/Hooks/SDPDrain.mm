@@ -2,11 +2,12 @@
 #import <UIKit/UIKit.h>
 #import "SDPQueue.h"
 #import "SDPConfig.h"
+#import "SDPDebug.h"
 
-// Sandboxed Safari may be denied the unlink even though the jailbreak grants the
-// record. Paths that fail there are queued and drained here, in SpringBoard.
-// The switch is re-read at drain time: a queued path must not survive the user
-// turning the tweak off.
+// A removal can fail when Safari lacks the sandbox extension for the Downloads
+// container. Those paths are queued and retried in the same process later, so
+// the tweak never needs to be injected into SpringBoard (which would force the
+// package manager to report a respring on install).
 
 static void SDPDrainNow(void) {
     [SDPConfig sdp_synchronize];
@@ -14,43 +15,19 @@ static void SDPDrainNow(void) {
         // Drop the backlog instead of holding deletions the user cancelled.
         if ([SDPQueue sdp_pendingCount] > 0) {
             [SDPQueue sdp_discardPendingPaths];
-            NSLog(@"[SafariDownloadPurge] disabled, dropped pending queue");
+            [SDPDebug sdp_log:@"插件已关闭，清空待清理队列"];
         }
         return;
     }
     NSUInteger removed = [SDPQueue sdp_drainPendingPaths];
     if (removed > 0) {
-        NSLog(@"[SafariDownloadPurge] drain removed %lu file(s)", (unsigned long)removed);
+        [SDPDebug sdp_log:@"兜底队列已清理 %lu 个文件", (unsigned long)removed];
     }
-}
-
-static void SDPDrainNotificationCallback(CFNotificationCenterRef center,
-                                        void *observer,
-                                        CFStringRef name,
-                                        const void *object,
-                                        CFDictionaryRef userInfo) {
-    SDPDrainNow();
 }
 
 __attribute__((constructor)) static void SDPDrainEntry(void) {
     @autoreleasepool {
-        NSString *bundle = [NSBundle mainBundle].bundleIdentifier ?: @"";
-        if (![bundle containsString:@"SpringBoard"]) {
-            return;
-        }
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
-                                        NULL,
-                                        SDPDrainNotificationCallback,
-                                        CFSTR("com.axs.safaridownloadpurge.drain"),
-                                        NULL,
-                                        CFNotificationSuspensionBehaviorDeliverImmediately);
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
-                                        NULL,
-                                        SDPDrainNotificationCallback,
-                                        CFSTR("com.axs.safaridownloadpurge.preferences-changed"),
-                                        NULL,
-                                        CFNotificationSuspensionBehaviorDeliverImmediately);
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)),
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
             SDPDrainNow();
         });

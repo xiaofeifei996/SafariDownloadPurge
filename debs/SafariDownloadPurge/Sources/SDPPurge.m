@@ -3,6 +3,13 @@
 #import <objc/message.h>
 #import "SDPPrivate.h"
 #import "SDPQueue.h"
+#import "SDPDebug.h"
+
+NSString *const SDPPurgeReportRemoved = @"removed";
+NSString *const SDPPurgeReportLogOnly = @"logOnly";
+NSString *const SDPPurgeReportKeptInstaller = @"keptInstaller";
+NSString *const SDPPurgeReportDeferred = @"deferred";
+NSString *const SDPPurgeReportSkipped = @"skipped";
 
 // Types a user tends to keep on disk: installers and archives. Purging them
 // together with the Safari entry is usually a mistake, so they survive by
@@ -108,7 +115,7 @@ static NSString *SDPRootPath(_SFDownloadManager *manager) {
 
 // Files still owned by a surviving record must not be unlinked.
 static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
-                                                 NSArray *wildcard) {
+                                                  NSArray *wildcard) {
     NSMutableSet<NSString *> *kept = [NSMutableSet set];
     if (!manager || ![manager respondsToSelector:@selector(downloads)]) {
         return kept;
@@ -137,32 +144,46 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
 @implementation SDPPurge
 
 + (NSArray<NSString *> *)sdp_purgeDownloads:(NSArray *)downloads reason:(NSString *)reason {
+    return [self sdp_purgeDownloads:downloads reason:reason report:NULL];
+}
+
++ (NSArray<NSString *> *)sdp_purgeDownloads:(NSArray *)downloads
+                                     reason:(NSString *)reason
+                                     report:(NSDictionary **)report {
+    NSMutableDictionary *outcome = [NSMutableDictionary dictionary];
+    if (report) {
+        *report = outcome;
+    }
     if (![downloads isKindOfClass:[NSArray class]] || downloads.count == 0) {
         return @[];
     }
+
     // Gate on the live value at the moment of deletion: a stale snapshot here
     // makes the master switch look broken.
     [SDPConfig sdp_synchronize];
     if (![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
+        [SDPDebug sdp_log:@"未执行：总开关关闭"];
         return @[];
     }
     if ([reason isEqualToString:@"single"] &&
         ![SDPConfig sdp_boolForKey:@"purgeSingle" defaultValue:YES]) {
+        [SDPDebug sdp_log:@"未执行：单个清除开关关闭"];
         return @[];
     }
     if ([reason isEqualToString:@"clear-all"] &&
         ![SDPConfig sdp_boolForKey:@"purgeClearAll" defaultValue:YES]) {
+        [SDPDebug sdp_log:@"未执行：清除全部开关关闭"];
         return @[];
     }
 
     BOOL logOnly = [SDPConfig sdp_boolForKey:@"logOnly" defaultValue:NO];
-    BOOL keepInstallers = [SDPConfig sdp_boolForKey:@"keepInstallers" defaultValue:YES];
+    BOOL keepInstallers = [SDPConfig sdp_boolForKey:@"keepInstallers" defaultValue:NO];
 
     _SFDownloadManager *manager = SDPSharedManager();
     NSString *rootPath = SDPRootPath(manager);
     NSSet<NSString *> *referenced = SDPPathsStillReferenced(manager, downloads);
 
-    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSFileManager *fm = [NSFileManager defaultManager];
     NSMutableArray<NSString *> *removed = [NSMutableArray array];
     NSMutableSet<NSString *> *handled = [NSMutableSet set];
     NSMutableArray<NSString *> *deferred = [NSMutableArray array];
@@ -174,44 +195,53 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
         }
         [handled addObject:path];
 
-        if (![fileManager fileExistsAtPath:path]) {
-            NSLog(@"[SafariDownloadPurge] skip missing file: %@", path);
+        if (![fm fileExistsAtPath:path]) {
+            [SDPDebug sdp_log:@"跳过（文件不存在）：%@", path];
             continue;
         }
         if (!SDPPathLooksLikeDownload(path, rootPath)) {
-            NSLog(@"[SafariDownloadPurge] skip outside downloads: %@", path);
+            [SDPDebug sdp_log:@"跳过（不在下载目录）：%@", path];
+            outcome[SDPPurgeReportSkipped] = @([outcome[SDPPurgeReportSkipped] integerValue] + 1);
             continue;
         }
         if ([referenced containsObject:path]) {
-            NSLog(@"[SafariDownloadPurge] skip still referenced: %@", path);
+            [SDPDebug sdp_log:@"跳过（仍被其它记录引用）：%@", path];
             continue;
         }
         NSString *extension = path.pathExtension.lowercaseString;
         if (keepInstallers && extension.length > 0 &&
             [SDPInstallerExtensions() containsObject:extension]) {
-            NSLog(@"[SafariDownloadPurge] keep installer: %@", path);
+            [SDPDebug sdp_log:@"保留安装包/压缩包：%@", path];
+            outcome[SDPPurgeReportKeptInstaller] =
+                @([outcome[SDPPurgeReportKeptInstaller] integerValue] + 1);
             continue;
         }
         if (logOnly) {
-            NSLog(@"[SafariDownloadPurge] log-only, would remove: %@", path);
-            [removed addObject:path];
+            [SDPDebug sdp_log:@"只记录（未删除）：%@", path];
+            outcome[SDPPurgeReportLogOnly] =
+                @([outcome[SDPPurgeReportLogOnly] integerValue] + 1);
             continue;
         }
 
         NSError *error = nil;
-        if ([fileManager removeItemAtPath:path error:&error]) {
-            NSLog(@"[SafariDownloadPurge] removed: %@", path);
+        if ([fm removeItemAtPath:path error:&error]) {
+            [SDPDebug sdp_log:@"已删除：%@", path];
             [removed addObject:path];
         } else {
             // Safari may lack the sandbox extension for the Downloads container;
             // hand the path to the SpringBoard fallback instead of giving up.
-            NSLog(@"[SafariDownloadPurge] deferred %@: %@", path, error.localizedDescription);
+            [SDPDebug sdp_log:@"删除失败转兜底 %@：%@", path, error.localizedDescription];
             [deferred addObject:path];
             [removed addObject:path];
+            outcome[SDPPurgeReportDeferred] =
+                @([outcome[SDPPurgeReportDeferred] integerValue] + 1);
         }
     }
     if (deferred.count > 0) {
         [SDPQueue sdp_enqueuePaths:deferred];
+    }
+    if (removed.count > 0) {
+        outcome[SDPPurgeReportRemoved] = @(removed.count);
     }
     return removed;
 }

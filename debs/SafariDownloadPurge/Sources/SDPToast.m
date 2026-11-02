@@ -1,4 +1,5 @@
 #import "SDPToast.h"
+#import "SDPPurge.h"
 #import <UIKit/UIKit.h>
 
 static void SDPShowToast(NSString *text) {
@@ -80,6 +81,35 @@ static void SDPShowToast(NSString *text) {
         return;
     }
     SDPShowToast([NSString stringWithFormat:@"已同步删除 %lu 个文件", (unsigned long)count]);
+}
+
++ (void)sdp_showReport:(NSDictionary<NSString *, NSNumber *> *)report {
+    if (![report isKindOfClass:[NSDictionary class]] || report.count == 0) {
+        return;
+    }
+    NSMutableArray<NSString *> *parts = [NSMutableArray array];
+    NSUInteger removed = [report[SDPPurgeReportRemoved] unsignedIntegerValue];
+    NSUInteger deferred = [report[SDPPurgeReportDeferred] unsignedIntegerValue];
+    NSUInteger logOnly = [report[SDPPurgeReportLogOnly] unsignedIntegerValue];
+    NSUInteger kept = [report[SDPPurgeReportKeptInstaller] unsignedIntegerValue];
+
+    if (removed > deferred) {
+        [parts addObject:[NSString stringWithFormat:@"已删除 %lu 个",
+                          (unsigned long)(removed - deferred)]];
+    }
+    if (deferred > 0) {
+        [parts addObject:[NSString stringWithFormat:@"转入兜底 %lu 个", (unsigned long)deferred]];
+    }
+    if (kept > 0) {
+        [parts addObject:[NSString stringWithFormat:@"保留安装包 %lu 个", (unsigned long)kept]];
+    }
+    if (logOnly > 0) {
+        [parts addObject:[NSString stringWithFormat:@"只记录未删除 %lu 个", (unsigned long)logOnly]];
+    }
+    if (parts.count == 0) {
+        return;
+    }
+    SDPShowToast([parts componentsJoinedByString:@"，"]);
 }
 
 + (void)sdp_showProtectedCount:(NSUInteger)count {

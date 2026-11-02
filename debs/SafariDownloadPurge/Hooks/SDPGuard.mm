@@ -51,10 +51,15 @@ static BOOL SDPPathIsProtected(NSString *path) {
             return YES;
         }
     }
-    if (![path containsString:@"/Downloads/"]) {
-        return NO;
+    // Safari also keeps downloads inside its own data container; the manager may
+    // report those through the same accessor, but the path shape differs, so a
+    // second check keeps them covered.
+    for (NSString *marker in @[@"/Downloads/", @"/Downloads", @"/Downloads "]) {
+        if ([path containsString:marker]) {
+            return [path hasPrefix:@"/var/mobile/"] || [path hasPrefix:@"/private/var/mobile/"];
+        }
     }
-    return [path hasPrefix:@"/var/mobile/"] || [path hasPrefix:@"/private/var/mobile/"];
+    return NO;
 }
 
 // Enabled means the tweak handles deletion itself; the guard only steps in when

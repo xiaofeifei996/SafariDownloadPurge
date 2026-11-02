@@ -8,7 +8,7 @@
 		<dict>
 			<key>cell</key><string>PSGroupCell</string>
 			<key>label</key><string>总开关</string>
-			<key>footerText</key><string>关闭后 Safari 只清除下载记录，磁盘文件保持不动，已在队列中的待清理文件也会一并丢弃。</string>
+			<key>footerText</key><string>打开：Safari 清除下载记录时，同步删除磁盘上的文件。关闭：保留文件，并拦截 Safari 自己的删除。</string>
 		</dict>
 		<dict>
 			<key>cell</key><string>PSSwitchCell</string>
@@ -39,14 +39,19 @@
 		<dict>
 			<key>cell</key><string>PSGroupCell</string>
 			<key>label</key><string>安全策略</string>
-			<key>footerText</key><string>安装包（ipa、deb、dmg 等）默认保留在“文件”App 中，避免误删要存档的文件；关闭后所有类型一视同仁。</string>
+			<key>footerText</key><string>「保留安装包」默认关闭。打开后，ipa / deb / dmg / rar / 7z 等文件只清记录不删文件，看起来就像插件没生效，请按需开启。</string>
 		</dict>
 		<dict>
 			<key>cell</key><string>PSSwitchCell</string>
 			<key>label</key><string>保留安装包与压缩包</string>
 			<key>key</key><string>keepInstallers</string>
 			<key>defaults</key><string>com.axs.safaridownloadpurge</string>
-			<key>default</key><true/>
+			<key>default</key><false/>
+		</dict>
+		<dict>
+			<key>cell</key><string>PSGroupCell</string>
+			<key>label</key><string>调试</string>
+			<key>footerText</key><string>打开「只记录不删除」后，插件不会删除任何文件，只写日志。排查问题时才打开，平时请保持关闭。</string>
 		</dict>
 		<dict>
 			<key>cell</key><string>PSSwitchCell</string>
@@ -58,7 +63,7 @@
 		<dict>
 			<key>cell</key><string>PSGroupCell</string>
 			<key>label</key><string>说明</string>
-			<key>footerText</key><string>插件作用于 Safari 的下载列表。删除前会核对文件位于下载目录且没有其他下载记录引用；修改设置后无需重启 Safari。</string>
+			<key>footerText</key><string>插件作用于 Safari 的下载列表。删除前会核对文件位于下载目录且没有其他下载记录引用。修改设置后无需重启 Safari，也无需注销。</string>
 		</dict>
 	</array>
 </dict>
