@@ -75,6 +75,18 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
 
 @implementation SDPConfig
 
+// Keeps the marker in step with a stored value written by an older build, so an
+// upgrade does not leave "switch says on but marker says off" behind.
++ (void)sdp_reconcileDisabledMarker {
+    BOOL stored = [self sdp_boolForKey:@"enabled" defaultValue:NO];
+    BOOL marker = SDPDisabledMarkerPresent();
+    if (stored && marker) {
+        SDPSetDisabledMarker(NO);
+    } else if (!stored && !marker) {
+        SDPSetDisabledMarker(YES);
+    }
+}
+
 + (void)sdp_migrateIfNeeded {
     static const NSInteger current = 2;
     NSInteger schema = [SDPCfPreferenceValue(SDPSchemaKey) integerValue];
@@ -127,6 +139,12 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
 }
 
 + (BOOL)sdp_purgeEnabled {
+    // A marker file is checked first: "off" must be unambiguous and must not
+    // depend on a preference value surviving a sandbox or a type conversion.
+    // Deleting a single file is far more reliable than reading a boolean back.
+    if (SDPDisabledMarkerPresent()) {
+        return NO;
+    }
     [self sdp_synchronize];
     BOOL enabled = [self sdp_boolForKey:@"enabled" defaultValue:NO];
     // Logged per decision so the log shows exactly what the acting process saw,
@@ -180,6 +198,11 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
     }
     NSNumber *number = value ? @YES : @NO;
     NSNumber *revision = @([[NSDate date] timeIntervalSince1970]);
+    if ([key isEqualToString:@"enabled"]) {
+        // The marker is the authoritative "off" signal; the preference value is
+        // only kept so older builds and the panel agree on what is shown.
+        SDPSetDisabledMarker(!value);
+    }
 
     CFPreferencesSetAppValue((__bridge CFStringRef)key,
                              (__bridge CFPropertyListRef)number,
@@ -214,8 +237,11 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
     // would look flipped in Settings while Safari kept the old behaviour.
     NSDictionary *verify = [NSDictionary dictionaryWithContentsOfFile:SDPSharedStatePath()];
     BOOL stored = [[verify[key] description] length] > 0;
-    [SDPDebug sdp_log:@"写入 %@=%@ 共享文件%@", key, number,
-     stored ? @"成功" : @"失败（Safari 可能读不到）"];
+    [SDPDebug sdp_log:@"写入 %@=%@ 共享文件%@%@", key, number,
+     stored ? @"成功" : @"失败（Safari 可能读不到）",
+     [key isEqualToString:@"enabled"]
+         ? (value ? @"，已清除 disabled 标记" : @"，已写入 disabled 标记")
+         : @""];
 
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
                                          CFSTR("com.axs.safaridownloadpurge.preferences-changed"),

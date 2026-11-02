@@ -267,6 +267,7 @@ static void SDPScheduleInstall(NSUInteger attempt) {
 __attribute__((constructor)) static void SDPEntry(void) {
     @autoreleasepool {
         [SDPConfig sdp_migrateIfNeeded];
+        [SDPConfig sdp_reconcileDisabledMarker];
         // Proves from inside the log that the dylib loaded in this process and
         // that the shared state file is readable from here.
         [SDPDebug sdp_log:@"自检 进程=%@ build=%@ 共享文件=%@ enabled=%@",

@@ -27,6 +27,9 @@
 // upgrade resets those two keys once, guarded by a schema marker.
 + (void)sdp_migrateIfNeeded;
 
+// Aligns the on-disk "disabled" marker with the stored switch value.
++ (void)sdp_reconcileDisabledMarker;
+
 // Human readable "store -> value" summary used by the panel's diagnostics row.
 + (NSString *)sdp_diagnostics;
 + (NSString *)sdp_storeSummary;

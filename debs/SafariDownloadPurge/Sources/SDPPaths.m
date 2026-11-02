@@ -61,6 +61,28 @@ static NSArray<NSString *> *SDPContainerPaths(void) {
     return list;
 }
 
+NSString *SDPDisabledMarkerPath(void) {
+    return [SDPSharedFlagDirectory stringByAppendingPathComponent:@"disabled"];
+}
+
+BOOL SDPDisabledMarkerPresent(void) {
+    return [[NSFileManager defaultManager] fileExistsAtPath:SDPDisabledMarkerPath()];
+}
+
+void SDPSetDisabledMarker(BOOL disabled) {
+    NSFileManager *manager = [NSFileManager defaultManager];
+    [manager createDirectoryAtPath:SDPSharedFlagDirectory
+       withIntermediateDirectories:YES attributes:nil error:NULL];
+    if (disabled) {
+        [@"disabled" writeToFile:SDPDisabledMarkerPath()
+                     atomically:YES
+                       encoding:NSUTF8StringEncoding
+                          error:NULL];
+    } else {
+        [manager removeItemAtPath:SDPDisabledMarkerPath() error:NULL];
+    }
+}
+
 NSString *SDPCanonicalPreferencePath(void) {
     return [@"/var/mobile/Library/Preferences/" stringByAppendingPathComponent:SDPPreferenceFile];
 }
