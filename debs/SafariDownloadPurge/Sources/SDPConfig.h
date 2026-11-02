@@ -14,6 +14,11 @@
 // a long-lived process cannot act on its launch-time cache.
 + (void)sdp_synchronize;
 
+// 1.1.0 shipped keepInstallers=YES and the debug switch could be flipped by a
+// plain "turn everything on" tap. Both make the tweak look broken, so an
+// upgrade resets those two keys once, guarded by a schema marker.
++ (void)sdp_migrateIfNeeded;
+
 // Human readable "store -> value" summary used by the panel's diagnostics row.
 + (NSString *)sdp_diagnostics;
 + (NSString *)sdp_storeSummary;

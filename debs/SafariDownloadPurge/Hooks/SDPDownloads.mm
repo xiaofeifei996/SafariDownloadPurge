@@ -258,6 +258,7 @@ __attribute__((constructor)) static void SDPEntry(void) {
         if ([bundle containsString:@"SpringBoard"]) {
             return;
         }
+        [SDPConfig sdp_migrateIfNeeded];
         [SDPDebug sdp_log:@"插件载入 %@", [NSProcessInfo processInfo].processName];
         [[NSNotificationCenter defaultCenter] addObserverForName:NSBundleDidLoadNotification
                                                           object:nil

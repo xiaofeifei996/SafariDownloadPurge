@@ -1,9 +1,11 @@
 #import "SDPConfig.h"
 #import "SDPPaths.h"
+#import "SDPDebug.h"
 #import <CoreFoundation/CoreFoundation.h>
 
 static NSString *const SDPDomainName = @"com.axs.safaridownloadpurge";
 static NSString *const SDPRevisionKey = @"__sdpRevision";
+static NSString *const SDPSchemaKey = @"__sdpSchema";
 
 static double SDPNumberAsDouble(id object) {
     return [object isKindOfClass:[NSNumber class]] ? [object doubleValue] : 0.0;
@@ -19,6 +21,13 @@ static BOOL SDPBoolFromObject(id object) {
                [text isEqualToString:@"true"] || [text isEqualToString:@"on"];
     }
     return NO;
+}
+
+static void SDPCfPreferenceSetValue(NSString *key, id value) {
+    CFPreferencesSetAppValue((__bridge CFStringRef)key,
+                             (__bridge CFPropertyListRef)value,
+                             (__bridge CFStringRef)SDPDomainName);
+    CFPreferencesAppSynchronize((__bridge CFStringRef)SDPDomainName);
 }
 
 static id SDPCfPreferenceValue(NSString *key) {
@@ -59,6 +68,20 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
 }
 
 @implementation SDPConfig
+
++ (void)sdp_migrateIfNeeded {
+    static const NSInteger current = 2;
+    NSInteger schema = [SDPCfPreferenceValue(SDPSchemaKey) integerValue];
+    if (schema >= current) {
+        return;
+    }
+    // Preserve the user's real intent (master switch, per-scenario switches) and
+    // only normalise the two keys that silently disable the feature.
+    [self sdp_setBool:NO forKey:@"keepInstallers"];
+    [self sdp_setBool:NO forKey:@"logOnly"];
+    SDPCfPreferenceSetValue(SDPSchemaKey, @(current));
+    [SDPDebug sdp_log:@"已迁移配置到 schema %ld", (long)current];
+}
 
 + (void)sdp_synchronize {
     // Makes the daemon hand over writes made by other processes before the next

@@ -114,6 +114,8 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    // Applies pending key normalisation before the switches are read.
+    [SDPConfig sdp_migrateIfNeeded];
     [self reloadSpecifiers];
 }
 
