@@ -55,7 +55,13 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
             NSDate *date = attributes[NSFileModificationDate];
             revision = date ? [date timeIntervalSince1970] : 0;
         }
-        if (!best || revision > bestRevision) {
+        BOOL isCanonical = [path isEqualToString:SDPCanonicalPreferencePath()];
+        BOOL bestIsCanonical = [bestPath isEqualToString:SDPCanonicalPreferencePath()];
+        // Ties go to the shared file the Settings panel writes: a container copy
+        // can carry the same stamp while still holding an old value.
+        BOOL wins = !best || revision > bestRevision ||
+                    (revision == bestRevision && isCanonical && !bestIsCanonical);
+        if (wins) {
             best = values;
             bestRevision = revision;
             bestPath = path;
@@ -93,23 +99,17 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
     if (key.length == 0) {
         return defaultValue;
     }
-    id cached = SDPCfPreferenceValue(key);
-    double cachedRevision = SDPNumberAsDouble(SDPCfPreferenceValue(SDPRevisionKey));
+    // The on-disk copies are read on every call: Safari caches its preferences
+    // for the whole process lifetime, so trusting the daemon first kept a stale
+    // "enabled" alive and the switch looked dead until Safari restarted.
     NSDictionary *snapshot = SDPBestFileSnapshot(key, NULL);
     id fileValue = snapshot[key];
-    double fileRevision = SDPNumberAsDouble(snapshot[SDPRevisionKey]);
-
-    // A sandboxed process can answer from its own container, while the panel
-    // wrote elsewhere. The revision stamp written with every change decides
-    // which copy is authoritative; on a tie the daemon answer wins.
-    if (fileValue && fileRevision > cachedRevision) {
-        return SDPBoolFromObject(fileValue);
-    }
-    if (cached) {
-        return SDPBoolFromObject(cached);
-    }
     if (fileValue) {
         return SDPBoolFromObject(fileValue);
+    }
+    id cached = SDPCfPreferenceValue(key);
+    if (cached) {
+        return SDPBoolFromObject(cached);
     }
     return defaultValue;
 }
