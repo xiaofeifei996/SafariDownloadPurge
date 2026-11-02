@@ -267,6 +267,14 @@ static void SDPScheduleInstall(NSUInteger attempt) {
 __attribute__((constructor)) static void SDPEntry(void) {
     @autoreleasepool {
         [SDPConfig sdp_migrateIfNeeded];
+        // Proves from inside the log that the dylib loaded in this process and
+        // that the shared state file is readable from here.
+        [SDPDebug sdp_log:@"自检 进程=%@ build=%@ 共享文件=%@ enabled=%@",
+         [NSProcessInfo processInfo].processName ?: @"?",
+         SDP_BUILD_STAMP,
+         [[NSFileManager defaultManager] fileExistsAtPath:
+             @"/var/mobile/Library/SafariDownloadPurge/state.plist"] ? @"可读" : @"缺失",
+         [SDPConfig sdp_boolForKey:@"enabled" defaultValue:NO] ? @"YES" : @"NO"];
         // Stamp the build that actually loaded, so the panel can tell "dylib is
         // running" apart from "an old process still holds the previous build".
         [SDPConfig sdp_setString:SDP_BUILD_STAMP forKey:@"loadedBuild"];

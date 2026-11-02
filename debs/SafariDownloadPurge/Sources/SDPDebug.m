@@ -1,9 +1,14 @@
 #import "SDPDebug.h"
+#import <CoreFoundation/CoreFoundation.h>
 
-// The log lives in the tweak's own preferences domain so both Safari and the
-// Settings panel can reach it without extra entitlements. Rotated by line count
-// so it cannot grow without bound on a device that is never rebooted.
+// The log has to cross sandboxes: it is written from inside Safari and read in
+// Settings. Preferences are per-process containers there, so the log lives in
+// the same flat file as the configuration instead.
+//
+// One line per process is appended, newest last, and the file is trimmed by
+// line count so it cannot grow without bound.
 
+static NSString *const SDPDebugLogPath = @"/var/mobile/Library/SafariDownloadPurge/debug.log";
 static NSString *const SDPDebugDomain = @"com.axs.safaridownloadpurge";
 static NSString *const SDPDebugKey = @"debugLog";
 static const NSUInteger SDPDebugMaxLines = 400;
@@ -17,26 +22,35 @@ static NSLock *SDPDebugLock(void) {
     return lock;
 }
 
+static NSString *SDPDebugLogFile(void) {
+    NSString *directory = [SDPDebugLogPath stringByDeletingLastPathComponent];
+    [[NSFileManager defaultManager] createDirectoryAtPath:directory
+                             withIntermediateDirectories:YES
+                                              attributes:nil
+                                                   error:NULL];
+    return SDPDebugLogPath;
+}
+
 static NSMutableArray<NSString *> *SDPDebugLoad(void) {
-    CFPropertyListRef value = CFPreferencesCopyAppValue((__bridge CFStringRef)SDPDebugKey,
-                                                       (__bridge CFStringRef)SDPDebugDomain);
-    NSArray *array = nil;
-    if (value && CFGetTypeID(value) == CFArrayGetTypeID()) {
-        array = (__bridge_transfer NSArray *)value;
-        value = NULL;
+    NSString *text = [NSString stringWithContentsOfFile:SDPDebugLogFile()
+                                               encoding:NSUTF8StringEncoding
+                                                  error:NULL];
+    if (text.length == 0) {
+        return [NSMutableArray array];
     }
-    if (value) {
-        CFRelease(value);
+    NSArray<NSString *> *lines = [text componentsSeparatedByString:@"\n"];
+    NSMutableArray<NSString *> *kept = [NSMutableArray array];
+    for (NSString *line in lines) {
+        if (line.length > 0) {
+            [kept addObject:line];
+        }
     }
-    return [array isKindOfClass:[NSArray class]] ? [array mutableCopy]
-                                                 : [NSMutableArray array];
+    return kept;
 }
 
 static void SDPDebugStore(NSArray<NSString *> *lines) {
-    CFPreferencesSetAppValue((__bridge CFStringRef)SDPDebugKey,
-                             (__bridge CFPropertyListRef)lines,
-                             (__bridge CFStringRef)SDPDebugDomain);
-    CFPreferencesAppSynchronize((__bridge CFStringRef)SDPDebugDomain);
+    NSString *text = [lines componentsJoinedByString:@"\n"];
+    [text writeToFile:SDPDebugLogFile() atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 }
 
 @implementation SDPDebug
@@ -79,10 +93,17 @@ static void SDPDebugStore(NSArray<NSString *> *lines) {
     [SDPDebugLock() lock];
     NSArray<NSString *> *all = SDPDebugLoad();
     [SDPDebugLock() unlock];
-    NSUInteger count = MIN(lines, all.count);
-    if (count == 0) {
+    if (all.count == 0) {
+        // Older builds kept the log in preferences; show it if nothing newer.
+        CFPropertyListRef legacy = CFPreferencesCopyAppValue((__bridge CFStringRef)SDPDebugKey,
+                                                            (__bridge CFStringRef)SDPDebugDomain);
+        NSArray *old = legacy ? (__bridge_transfer NSArray *)legacy : nil;
+        if ([old isKindOfClass:[NSArray class]] && old.count > 0) {
+            return [old componentsJoinedByString:@"\n"];
+        }
         return @"(暂无日志)";
     }
+    NSUInteger count = MIN(lines, all.count);
     NSArray<NSString *> *tail = [all subarrayWithRange:NSMakeRange(all.count - count, count)];
     return [tail componentsJoinedByString:@"\n"];
 }
@@ -90,6 +111,9 @@ static void SDPDebugStore(NSArray<NSString *> *lines) {
 + (void)sdp_clearLog {
     [SDPDebugLock() lock];
     SDPDebugStore(@[]);
+    CFPreferencesSetAppValue((__bridge CFStringRef)SDPDebugKey, (__bridge CFPropertyListRef)@[],
+                             (__bridge CFStringRef)SDPDebugDomain);
+    CFPreferencesAppSynchronize((__bridge CFStringRef)SDPDebugDomain);
     [SDPDebugLock() unlock];
 }
 

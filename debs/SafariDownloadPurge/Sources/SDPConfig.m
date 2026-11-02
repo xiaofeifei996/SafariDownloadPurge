@@ -128,7 +128,21 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
 
 + (BOOL)sdp_purgeEnabled {
     [self sdp_synchronize];
-    return [self sdp_boolForKey:@"enabled" defaultValue:NO];
+    BOOL enabled = [self sdp_boolForKey:@"enabled" defaultValue:NO];
+    // Logged per decision so the log shows exactly what the acting process saw,
+    // including which store answered. Without this, a stale copy and a working
+    // switch are indistinguishable from the outside.
+    static NSTimeInterval lastLog;
+    NSTimeInterval now = [NSDate date].timeIntervalSince1970;
+    if (now - lastLog > 1.0) {
+        lastLog = now;
+        NSDictionary *shared = [self sdp_sharedState];
+        [SDPDebug sdp_log:@"判定 enabled=%@（共享文件=%@，cfprefsd=%@）",
+         enabled ? @"YES" : @"NO",
+         shared[@"enabled"] ? [shared[@"enabled"] description] : @"缺失",
+         SDPCfPreferenceValue(@"enabled") ? @"有" : @"缺失"];
+    }
+    return enabled;
 }
 
 + (NSString *)sdp_stringForKey:(NSString *)key {
