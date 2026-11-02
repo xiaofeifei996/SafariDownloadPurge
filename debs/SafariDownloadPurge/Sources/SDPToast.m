@@ -8,13 +8,17 @@
         if (![scene isKindOfClass:[UIWindowScene class]]) {
             continue;
         }
-        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+        UIWindowScene *windowScene = (UIWindowScene *)scene;
+        for (UIWindow *window in windowScene.windows) {
             if (window.isKeyWindow) {
                 return window;
             }
         }
+        if (windowScene.windows.count > 0) {
+            return windowScene.windows.firstObject;
+        }
     }
-    return [UIApplication sharedApplication].windows.firstObject;
+    return nil;
 }
 
 + (void)sdp_showRemovedCount:(NSUInteger)count {
