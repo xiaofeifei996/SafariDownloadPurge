@@ -1,6 +1,6 @@
 Package: com.axs.safaridownloadpurge
 Name: Safari 下载清除同步
-Version: 1.1.2
+Version: 1.1.3
 Architecture: iphoneos-arm
 Description: Safari 下载列表里点清除时，同步删除「文件」App 中对应的下载文件，并提供删除日志与回收站保护。
 Maintainer: Axs

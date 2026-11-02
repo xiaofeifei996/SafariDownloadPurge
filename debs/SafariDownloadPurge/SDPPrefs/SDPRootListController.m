@@ -57,9 +57,11 @@
 }
 
 - (NSString *)sdp_diagnosticsText {
-    NSString *pending = [NSString stringWithFormat:@"待清理队列：%lu 项\n\n",
-                         (unsigned long)[SDPQueue sdp_pendingCount]];
-    return [pending stringByAppendingString:[SDPConfig sdp_diagnostics]];
+    BOOL hooked = [SDPConfig sdp_boolForKey:@"hookInstalled" defaultValue:NO];
+    NSString *head = [NSString stringWithFormat:@"Safari 内 Hook：%@\n待清理队列：%lu 项\n\n",
+                      hooked ? @"已安装" : @"尚未安装（先在 Safari 打开一次下载列表）",
+                      (unsigned long)[SDPQueue sdp_pendingCount]];
+    return [head stringByAppendingString:[SDPConfig sdp_diagnostics]];
 }
 
 - (void)sdp_showLog:(id)sender {

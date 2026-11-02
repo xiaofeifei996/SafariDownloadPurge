@@ -17,10 +17,6 @@ done
 
 : "${THEOS:?Set THEOS to a compatible Theos toolchain first}"
 
-# Checked-out or uploaded files lose the executable bit; dpkg refuses that.
-if [ -d layout/DEBIAN ]; then
-    chmod 755 layout/DEBIAN/postinst layout/DEBIAN/postrm 2>/dev/null || true
-fi
 
 for scheme in "$@"; do
     package_scheme="$scheme"

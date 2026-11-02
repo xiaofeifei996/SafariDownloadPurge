@@ -233,20 +233,27 @@ static void SDPInstallHooks(void) {
     }
     if (hooked) {
         SDPInstalled = YES;
+        // Also surface it in the panel: if the hook never installed, the panel
+        // shows the last attempt instead and the cause is obvious.
+        [SDPConfig sdp_setBool:YES forKey:@"hookInstalled"];
         [SDPDebug sdp_log:@"Hook 已安装（%@）", [NSProcessInfo processInfo].processName];
     }
 }
 
-// SafariServices can load after the tweak, so retry briefly at launch.
+// SafariServices loads lazily and Safari can sit in the background for a long
+// time, so retry on a widening schedule instead of giving up after ten seconds.
 static void SDPScheduleInstall(NSUInteger attempt) {
     SDPInstallHooks();
-    if (SDPInstalled || attempt >= 20) {
-        if (!SDPInstalled) {
-            [SDPDebug sdp_log:@"SafariServices 未出现，未安装 Hook"];
-        }
+    if (SDPInstalled) {
         return;
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+    if (attempt >= 60) {
+        [SDPDebug sdp_log:@"SafariServices 未出现，未安装 Hook"];
+        return;
+    }
+    // 0.25s for the first two seconds, then every 2s up to two minutes.
+    NSTimeInterval delay = attempt < 8 ? 0.25 : 2.0;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         SDPScheduleInstall(attempt + 1);
     });
@@ -260,6 +267,14 @@ __attribute__((constructor)) static void SDPEntry(void) {
         }
         [SDPConfig sdp_migrateIfNeeded];
         [SDPDebug sdp_log:@"插件载入 %@", [NSProcessInfo processInfo].processName];
+        // Active state changes are a reliable moment to retry: this is when the
+        // download list is about to be used.
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
+                                                          object:nil
+                                                           queue:nil
+                                                      usingBlock:^(__unused NSNotification *note) {
+            SDPInstallHooks();
+        }];
         [[NSNotificationCenter defaultCenter] addObserverForName:NSBundleDidLoadNotification
                                                           object:nil
                                                            queue:nil

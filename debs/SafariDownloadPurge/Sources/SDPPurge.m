@@ -91,11 +91,14 @@ static BOOL SDPPathLooksLikeDownload(NSString *path, NSString *rootPath) {
             return YES;
         }
     }
-    // Fallback while the manager is still loading its history.
-    if ([path hasSuffix:@"/Downloads"] || ![path containsString:@"/Downloads/"]) {
-        return NO;
+    // Safari keeps downloads under its own data container on some builds, and
+    // the manager's root is not always loaded yet when the removal arrives.
+    for (NSString *marker in @[@"/Downloads/", @"/Downloads"]) {
+        if ([path containsString:marker] && ![path hasSuffix:@"/Downloads"]) {
+            return [path hasPrefix:@"/var/mobile/"] || [path hasPrefix:@"/private/var/mobile/"];
+        }
     }
-    return [path hasPrefix:@"/var/mobile/"] || [path hasPrefix:@"/private/var/mobile/"];
+    return NO;
 }
 
 static NSString *SDPRootPath(_SFDownloadManager *manager) {
@@ -113,9 +116,24 @@ static NSString *SDPRootPath(_SFDownloadManager *manager) {
     return nil;
 }
 
+// Paths of the records being removed, so they are excluded by value. Safari can
+// hand over instances that are not identical to the ones in `downloads`; an
+// identity check there made every file look "still referenced" and silently
+// skipped the deletion.
+static NSSet<NSString *> *SDPPathsOfRecords(NSArray *records) {
+    NSMutableSet<NSString *> *paths = [NSMutableSet set];
+    for (id record in records) {
+        NSString *path = SDPCanonicalPath(SDPFileURLForDownload(record).path);
+        if (path.length > 0) {
+            [paths addObject:path];
+        }
+    }
+    return paths;
+}
+
 // Files still owned by a surviving record must not be unlinked.
 static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
-                                                  NSArray *wildcard) {
+                                                  NSArray *removing) {
     NSMutableSet<NSString *> *kept = [NSMutableSet set];
     if (!manager || ![manager respondsToSelector:@selector(downloads)]) {
         return kept;
@@ -129,14 +147,16 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
     if (![remaining isKindOfClass:[NSArray class]]) {
         return kept;
     }
+    NSSet<NSString *> *removingPaths = SDPPathsOfRecords(removing);
     for (id record in remaining) {
-        if ([wildcard containsObject:record]) {
+        NSString *path = SDPCanonicalPath(SDPFileURLForDownload(record).path);
+        if (path.length == 0) {
             continue;
         }
-        NSString *path = SDPCanonicalPath(SDPFileURLForDownload(record).path);
-        if (path.length > 0) {
-            [kept addObject:path];
+        if ([removingPaths containsObject:path] || [removing containsObject:record]) {
+            continue;
         }
+        [kept addObject:path];
     }
     return kept;
 }
