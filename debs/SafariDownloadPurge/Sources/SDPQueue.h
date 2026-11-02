@@ -3,8 +3,8 @@
 #import <Foundation/Foundation.h>
 
 // A download file can live behind a sandbox extension only Safari holds. When
-// unlinking fails there, the path is queued and drained from SpringBoard, which
-// has broader file access under a jailbreak.
+// unlinking fails, the path is queued and retried inside Safari itself on the
+// next activation; nothing is ever injected into another process.
 @interface SDPQueue : NSObject
 
 + (void)sdp_enqueuePaths:(NSArray<NSString *> *)paths;

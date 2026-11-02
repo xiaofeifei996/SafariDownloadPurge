@@ -114,6 +114,35 @@ static NSDictionary *SDPBestFileSnapshot(NSString *key, NSString **originPath) {
     return defaultValue;
 }
 
++ (NSString *)sdp_stringForKey:(NSString *)key {
+    id value = SDPCfPreferenceValue(key);
+    if (!value) {
+        value = SDPBestFileSnapshot(key, NULL)[key];
+    }
+    return [value isKindOfClass:[NSString class]] ? value : nil;
+}
+
++ (void)sdp_setString:(NSString *)value forKey:(NSString *)key {
+    if (key.length == 0 || value.length == 0) {
+        return;
+    }
+    SDPCfPreferenceSetValue(key, value);
+    for (NSString *path in SDPPreferenceWritePaths()) {
+        NSMutableDictionary *values = nil;
+        NSDictionary *existing = [NSDictionary dictionaryWithContentsOfFile:path];
+        if ([existing isKindOfClass:[NSDictionary class]]) {
+            values = [existing mutableCopy];
+        }
+        if (!values) {
+            values = [NSMutableDictionary dictionary];
+        }
+        values[key] = value;
+        [[NSFileManager defaultManager] createDirectoryAtPath:[path stringByDeletingLastPathComponent]
+                                  withIntermediateDirectories:YES attributes:nil error:NULL];
+        [values writeToFile:path atomically:YES];
+    }
+}
+
 + (void)sdp_setBool:(BOOL)value forKey:(NSString *)key {
     if (key.length == 0) {
         return;

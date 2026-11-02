@@ -12,7 +12,7 @@
 NSArray<NSString *> *SDPPreferenceReadPaths(void);
 NSArray<NSString *> *SDPPreferenceWritePaths(void);
 
-// Containers of processes this tweak runs inside (Safari, SpringBoard).
+// Containers of the processes this tweak runs inside (Safari, SafariViewService).
 NSArray<NSString *> *SDPInjectedContainerPreferencePaths(void);
 
 NSString *SDPCanonicalPreferencePath(void);

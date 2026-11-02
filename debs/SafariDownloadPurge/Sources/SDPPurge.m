@@ -249,7 +249,7 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
             [removed addObject:path];
         } else {
             // Safari may lack the sandbox extension for the Downloads container;
-            // hand the path to the SpringBoard fallback instead of giving up.
+            // retry later inside Safari instead of giving up.
             [SDPDebug sdp_log:@"删除失败转兜底 %@：%@", path, error.localizedDescription];
             [deferred addObject:path];
             [removed addObject:path];

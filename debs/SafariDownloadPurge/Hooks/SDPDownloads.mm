@@ -236,7 +236,10 @@ static void SDPInstallHooks(void) {
         SDPInstalled = YES;
         // Also surface it in the panel: if the hook never installed, the panel
         // shows the last attempt instead and the cause is obvious.
+        // Recorded per process: the panel reports "installed" only while the
+        // process that installed it is the one serving Safari right now.
         [SDPConfig sdp_setBool:YES forKey:@"hookInstalled"];
+        [SDPConfig sdp_setBool:NO forKey:@"needsSafariRestart"];
         [SDPDebug sdp_log:@"Hook 已安装（%@）", [NSProcessInfo processInfo].processName];
     }
 }
@@ -262,12 +265,12 @@ static void SDPScheduleInstall(NSUInteger attempt) {
 
 __attribute__((constructor)) static void SDPEntry(void) {
     @autoreleasepool {
-        NSString *bundle = [NSBundle mainBundle].bundleIdentifier ?: @"";
-        if ([bundle containsString:@"SpringBoard"]) {
-            return;
-        }
         [SDPConfig sdp_migrateIfNeeded];
-        [SDPDebug sdp_log:@"插件载入 %@", [NSProcessInfo processInfo].processName];
+        // Stamp the build that actually loaded, so the panel can tell "dylib is
+        // running" apart from "an old process still holds the previous build".
+        [SDPConfig sdp_setString:@SDP_BUILD_STAMP forKey:@"loadedBuild"];
+        [SDPDebug sdp_log:@"插件载入 %@（build %@）",
+         [NSProcessInfo processInfo].processName, @SDP_BUILD_STAMP];
         // Active state changes are a reliable moment to retry: this is when the
         // download list is about to be used.
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification

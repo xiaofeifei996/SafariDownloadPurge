@@ -5,9 +5,8 @@
 #import "SDPDebug.h"
 
 // A removal can fail when Safari lacks the sandbox extension for the Downloads
-// container. Those paths are queued and retried in the same process later, so
-// the tweak never needs to be injected into SpringBoard (which would force the
-// package manager to report a respring on install).
+// container. Those paths are queued and retried in this same process, so the
+// tweak never needs to touch another process.
 
 static void SDPDrainNow(void) {
     [SDPConfig sdp_synchronize];

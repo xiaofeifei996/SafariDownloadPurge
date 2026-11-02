@@ -128,11 +128,8 @@ static void SDPInstallGuard(void) {
 
 __attribute__((constructor)) static void SDPGuardEntry(void) {
     @autoreleasepool {
-        NSString *bundle = [NSBundle mainBundle].bundleIdentifier ?: @"";
-        if ([bundle containsString:@"SpringBoard"]) {
-            // SpringBoard has no downloads UI; the drain must stay unblocked.
-            return;
-        }
+        // The tweak is filtered to Safari and SafariViewService only, so this
+        // always runs where a download list exists.
         SDPInstallGuard();
     }
 }

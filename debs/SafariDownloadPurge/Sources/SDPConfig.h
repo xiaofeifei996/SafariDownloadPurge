@@ -10,6 +10,9 @@
 + (BOOL)sdp_boolForKey:(NSString *)key defaultValue:(BOOL)defaultValue;
 + (void)sdp_setBool:(BOOL)value forKey:(NSString *)key;
 
++ (NSString *)sdp_stringForKey:(NSString *)key;
++ (void)sdp_setString:(NSString *)value forKey:(NSString *)key;
+
 // Pulls a fresh snapshot from cfprefsd; called before any deletion decision so
 // a long-lived process cannot act on its launch-time cache.
 + (void)sdp_synchronize;

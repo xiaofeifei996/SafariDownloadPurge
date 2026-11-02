@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+# Removing a dylib only needs Safari restarted. SpringBoard is never signalled.
+killall MobileSafari >/dev/null 2>&1 || true
+
+exit 0

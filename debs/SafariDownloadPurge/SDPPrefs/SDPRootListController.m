@@ -58,9 +58,15 @@
 
 - (NSString *)sdp_diagnosticsText {
     BOOL hooked = [SDPConfig sdp_boolForKey:@"hookInstalled" defaultValue:NO];
-    NSString *head = [NSString stringWithFormat:@"Safari 内 Hook：%@\n待清理队列：%lu 项\n\n",
-                      hooked ? @"已安装" : @"尚未安装（先在 Safari 打开一次下载列表）",
-                      (unsigned long)[SDPQueue sdp_pendingCount]];
+    NSString *loaded = [SDPConfig sdp_stringForKey:@"loadedBuild"];
+    NSString *state = @"尚未载入（Safari 还没启动过）";
+    if (loaded.length > 0) {
+        state = [NSString stringWithFormat:@"%@（build %@）",
+                 hooked ? @"已安装" : @"已载入但未安装 Hook", loaded];
+    }
+    NSString *head = [NSString stringWithFormat:
+                      @"Safari 内状态：%@\n待清理队列：%lu 项\n\n",
+                      state, (unsigned long)[SDPQueue sdp_pendingCount]];
     return [head stringByAppendingString:[SDPConfig sdp_diagnostics]];
 }
 

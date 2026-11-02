@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+# A freshly installed dylib is only picked up when the target process starts
+# again: a running Safari keeps its old image and ignores the new files, which is
+# why the tweak used to look dead until the whole device was respringed.
+#
+# Only Safari is restarted here. SpringBoard is never signalled, so the package
+# manager has nothing to report as a respring.
+killall MobileSafari >/dev/null 2>&1 || true
+killall com.apple.SafariViewService >/dev/null 2>&1 || true
+
+exit 0
