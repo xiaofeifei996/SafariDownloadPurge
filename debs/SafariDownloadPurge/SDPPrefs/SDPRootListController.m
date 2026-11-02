@@ -5,6 +5,7 @@
 #import <UIKit/UIKit.h>
 
 @interface SDPRootListController ()
+@property (nonatomic, strong) PSSpecifier *diagnosticsSpecifier;
 @end
 
 @implementation SDPRootListController
@@ -13,16 +14,27 @@
     if (!_specifiers) {
         NSMutableArray *items = [[self loadSpecifiersFromPlistName:@"SDPRoot"
                                                            target:self] mutableCopy];
-        [items addObject:[PSSpecifier preferenceSpecifierNamed:@"运行状态与存储"
-                                                        target:self
-                                                           set:nil
-                                                           get:@selector(readDiagnostics:)
-                                                        detail:nil
-                                                          cell:PSGroupCell
-                                                          edit:nil]];
+        // A group cell renders its footer only from the footerText property, so
+        // the diagnostics text is assigned here instead of fetched.
+        PSSpecifier *diagnostics = [PSSpecifier preferenceSpecifierNamed:@"运行状态"
+                                                                 target:self
+                                                                    set:nil
+                                                                    get:nil
+                                                                 detail:nil
+                                                                   cell:PSGroupCell
+                                                                   edit:nil];
+        [diagnostics setProperty:[self sdp_diagnosticsText] forKey:@"footerText"];
+        self.diagnosticsSpecifier = diagnostics;
+        [items addObject:diagnostics];
         _specifiers = items;
     }
     return _specifiers;
+}
+
+- (NSString *)sdp_diagnosticsText {
+    NSString *pending = [NSString stringWithFormat:@"待清理队列：%lu 项\n\n",
+                         (unsigned long)[SDPQueue sdp_pendingCount]];
+    return [pending stringByAppendingString:[SDPConfig sdp_diagnostics]];
 }
 
 - (id)readPreferenceValue:(PSSpecifier *)specifier {
@@ -40,18 +52,13 @@
         return;
     }
     [SDPConfig sdp_setBool:[value boolValue] forKey:key];
-}
 
-- (id)readDiagnostics:(PSSpecifier *)specifier {
-    (void)specifier;
-    NSString *pending = [NSString stringWithFormat:@"待清理队列：%lu 项",
-                         (unsigned long)[SDPQueue sdp_pendingCount]];
-    return [NSString stringWithFormat:@"%@\n\n%@", pending, [SDPConfig sdp_diagnostics]];
-}
-
-// Keep the diagnostics footer current after every toggle.
-- (void)reloadSpecifiers {
-    [super reloadSpecifiers];
+    // Keep the diagnostics footer in step with the toggle just flipped.
+    PSSpecifier *diagnostics = self.diagnosticsSpecifier;
+    if (diagnostics) {
+        [diagnostics setProperty:[self sdp_diagnosticsText] forKey:@"footerText"];
+        [self reloadSpecifier:diagnostics animated:NO];
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
