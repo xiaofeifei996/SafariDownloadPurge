@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import <substrate.h>
 #import "SDPPrivate.h"
 #import "SDPPurge.h"
@@ -15,9 +16,11 @@ static void (*SDPOrigRemoveAfterDate)(id, SEL, NSDate *);
 static BOOL SDPInstalled = NO;
 
 static NSArray *SDPAllDownloads(void) {
-    _SFDownloadManager *manager = nil;
+    Class cls = SDPClassNamed("_SFDownloadManager");
+    id manager = nil;
     @try {
-        manager = (id)[SDPClassNamed("_SFDownloadManager") sharedManager];
+        typedef id (*SDPSharedIMP)(id, SEL);
+        manager = cls ? ((SDPSharedIMP)objc_msgSend)((id)cls, @selector(sharedManager)) : nil;
     } @catch (__unused NSException *exception) {
         manager = nil;
     }

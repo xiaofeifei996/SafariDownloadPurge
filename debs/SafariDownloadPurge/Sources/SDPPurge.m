@@ -1,5 +1,6 @@
 #import "SDPPurge.h"
 #import "SDPConfig.h"
+#import <objc/message.h>
 #import "SDPPrivate.h"
 
 // Types a user tends to keep on disk: installers and archives. Purging them
@@ -22,13 +23,16 @@ static NSString *SDPCanonicalPath(NSString *path) {
     return [[path stringByStandardizingPath] stringByResolvingSymlinksInPath];
 }
 
+// Sending to a class looked up by name avoids a hard link dependency on the
+// private framework symbol, which is absent at load time.
 static _SFDownloadManager *SDPSharedManager(void) {
     Class cls = SDPClassNamed("_SFDownloadManager");
     if (!cls) {
         return nil;
     }
+    typedef id (*SDPSharedIMP)(id, SEL);
     @try {
-        return [_SFDownloadManager sharedManager];
+        return ((SDPSharedIMP)objc_msgSend)((id)cls, @selector(sharedManager));
     } @catch (__unused NSException *exception) {
         return nil;
     }
@@ -138,18 +142,15 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
     if (![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
         return @[];
     }
-    if ([reason isEqualToString:@"single"] &&
-        ![SDPConfig sdp_boolForKey:@"purgeSingle" defaultValue:YES]) {
+    BOOL single = ![reason isEqualToString:@"clear-all"];
+    if (single && ![SDPConfig sdp_boolForKey:@"purgeSingle" defaultValue:YES]) {
         return @[];
     }
     if ([reason isEqualToString:@"clear-all"] &&
         ![SDPConfig sdp_boolForKey:@"purgeClearAll" defaultValue:YES]) {
         return @[];
     }
-    if ([reason isEqualToString:@"multi"] &&
-        ![SDPConfig sdp_boolForKey:@"purgeMulti" defaultValue:YES]) {
-        return @[];
-    }
+
 
     BOOL logOnly = [SDPConfig sdp_boolForKey:@"logOnly" defaultValue:NO];
     BOOL keepInstallers = [SDPConfig sdp_boolForKey:@"keepInstallers" defaultValue:YES];
