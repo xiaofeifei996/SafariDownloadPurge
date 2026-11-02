@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# Reload Safari so the tweak is injected on next launch, and restart SpringBoard
+# so the fallback drain runs there as well.
+killall -9 MobileSafari 2>/dev/null || true
+killall -9 com.apple.SafariViewService 2>/dev/null || true
+killall -9 SpringBoard 2>/dev/null || true
+
+exit 0
