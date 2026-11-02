@@ -8,8 +8,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SafariDownloadPurge
 SafariDownloadPurge_FILES = $(wildcard Hooks/*.mm Sources/*.m)
-SafariDownloadPurge_CFLAGS = -fobjc-arc -I./Headers -I./Sources \
-	-DSDP_BUILD_STAMP='@"1.1.4"'
+SafariDownloadPurge_CFLAGS = -fobjc-arc -I./Headers -I./Sources
 SafariDownloadPurge_FRAMEWORKS = UIKit Foundation CoreFoundation
 SafariDownloadPurge_LIBRARIES = substrate
 

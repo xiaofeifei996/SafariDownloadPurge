@@ -8,6 +8,7 @@
 #import "SDPProtect.h"
 #import "SDPToast.h"
 #import "SDPConfig.h"
+#import "SDPBuild.h"
 #import "SDPDebug.h"
 
 // Safari removes download rows through _SFDownloadManager, and it may unlink the
@@ -268,9 +269,9 @@ __attribute__((constructor)) static void SDPEntry(void) {
         [SDPConfig sdp_migrateIfNeeded];
         // Stamp the build that actually loaded, so the panel can tell "dylib is
         // running" apart from "an old process still holds the previous build".
-        [SDPConfig sdp_setString:@SDP_BUILD_STAMP forKey:@"loadedBuild"];
+        [SDPConfig sdp_setString:SDP_BUILD_STAMP forKey:@"loadedBuild"];
         [SDPDebug sdp_log:@"插件载入 %@（build %@）",
-         [NSProcessInfo processInfo].processName, @SDP_BUILD_STAMP];
+         [NSProcessInfo processInfo].processName, SDP_BUILD_STAMP];
         // Active state changes are a reliable moment to retry: this is when the
         // download list is about to be used.
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
