@@ -24,6 +24,23 @@ Safari 的下载列表只保存记录，点「清除」只会删掉那行记录�
 | 保留安装包与压缩包 | 开 | 命中扩展名时不 unlink |
 | 只记录不删除 | 关 | 只写日志，便于排查 |
 
+## 1.0.1 修复：总开关关闭仍会删除
+
+原因有两处，都出在配置的一致性上：
+
+1. 读取时按“第一个存在的配置文件”取值。旧安装留下的副本（RootHide 换根后的 `.jbroot-*`、
+   迁移前的 `/var/jb` 副本）里仍是 `enabled=YES`，会盖掉设置面板刚写入的 `NO`。
+2. Safari 是沙盒进程，`CFPreferences` 可能解析到自己容器内的 Preferences，而设置面板写的是
+   `/var/mobile/Library/Preferences`；两边根本不是同一个文件，Safari 侧只能回落到默认值 YES。
+
+现在的做法：
+
+- 每次写入都带上 `__sdpRevision` 时间戳，读取时所有副本一起比较，以最新修订号为准，不再看谁先被遍历到。
+- 写入同时覆盖共享路径与 Safari / SafariViewService 的数据容器副本，读取时容器副本优先。
+- 删除前先 `CFPreferencesAppSynchronize` 强制从 daemon 取新值，避免长驻进程用启动时的旧快照。
+- 兜底队列在总开关关闭时直接丢弃，不会留下“关掉之后仍被删掉”的残留路径。
+- 设置面板底部新增「运行状态与存储」分组，直接显示当前生效值与每个副本的取值、修订号，便于自查。
+
 ## 技术要点
 
 - Hook 目标：`_SFDownloadManager` 的 `removeDownloads:` 与 `removeDownloadsStartedAfterDate:`，

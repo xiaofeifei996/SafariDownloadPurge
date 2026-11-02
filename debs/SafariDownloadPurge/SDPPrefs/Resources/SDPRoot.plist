@@ -8,7 +8,7 @@
 		<dict>
 			<key>cell</key><string>PSGroupCell</string>
 			<key>label</key><string>总开关</string>
-			<key>footerText</key><string>关闭后仅在 Safari 清除下载记录，磁盘文件保持不动。</string>
+			<key>footerText</key><string>关闭后 Safari 只清除下载记录，磁盘文件保持不动，已在队列中的待清理文件也会一并丢弃。</string>
 		</dict>
 		<dict>
 			<key>cell</key><string>PSSwitchCell</string>

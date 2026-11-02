@@ -140,18 +140,20 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
     if (![downloads isKindOfClass:[NSArray class]] || downloads.count == 0) {
         return @[];
     }
+    // Gate on the live value at the moment of deletion: a stale snapshot here
+    // makes the master switch look broken.
+    [SDPConfig sdp_synchronize];
     if (![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
         return @[];
     }
-    BOOL single = ![reason isEqualToString:@"clear-all"];
-    if (single && ![SDPConfig sdp_boolForKey:@"purgeSingle" defaultValue:YES]) {
+    if ([reason isEqualToString:@"single"] &&
+        ![SDPConfig sdp_boolForKey:@"purgeSingle" defaultValue:YES]) {
         return @[];
     }
     if ([reason isEqualToString:@"clear-all"] &&
         ![SDPConfig sdp_boolForKey:@"purgeClearAll" defaultValue:YES]) {
         return @[];
     }
-
 
     BOOL logOnly = [SDPConfig sdp_boolForKey:@"logOnly" defaultValue:NO];
     BOOL keepInstallers = [SDPConfig sdp_boolForKey:@"keepInstallers" defaultValue:YES];

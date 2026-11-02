@@ -5,9 +5,17 @@
 
 // Sandboxed Safari may be denied the unlink even though the jailbreak grants the
 // record. Paths that fail there are queued and drained here, in SpringBoard.
+// The switch is re-read at drain time: a queued path must not survive the user
+// turning the tweak off.
 
 static void SDPDrainNow(void) {
+    [SDPConfig sdp_synchronize];
     if (![SDPConfig sdp_boolForKey:@"enabled" defaultValue:YES]) {
+        // Drop the backlog instead of holding deletions the user cancelled.
+        if ([SDPQueue sdp_pendingCount] > 0) {
+            [SDPQueue sdp_discardPendingPaths];
+            NSLog(@"[SafariDownloadPurge] disabled, dropped pending queue");
+        }
         return;
     }
     NSUInteger removed = [SDPQueue sdp_drainPendingPaths];
@@ -34,6 +42,12 @@ __attribute__((constructor)) static void SDPDrainEntry(void) {
                                         NULL,
                                         SDPDrainNotificationCallback,
                                         CFSTR("com.axs.safaridownloadpurge.drain"),
+                                        NULL,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL,
+                                        SDPDrainNotificationCallback,
+                                        CFSTR("com.axs.safaridownloadpurge.preferences-changed"),
                                         NULL,
                                         CFNotificationSuspensionBehaviorDeliverImmediately);
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)),

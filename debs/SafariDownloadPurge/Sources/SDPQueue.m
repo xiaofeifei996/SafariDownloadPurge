@@ -55,6 +55,14 @@ static void SDPQueueWrite(NSArray<NSString *> *paths) {
     return paths;
 }
 
++ (void)sdp_discardPendingPaths {
+    SDPQueueWrite(@[]);
+}
+
++ (NSUInteger)sdp_pendingCount {
+    return SDPQueueRead().count;
+}
+
 + (NSUInteger)sdp_drainPendingPaths {
     NSArray<NSString *> *paths = [self sdp_takePendingPaths];
     if (paths.count == 0) {
