@@ -8,7 +8,7 @@
 		<array>
 			<string>com.apple.mobilesafari</string>
 			<string>com.apple.SafariViewService</string>
-			<string>com.apple.Safari.PrivateBrowsing</string>
+			<string>com.apple.springboard</string>
 		</array>
 	</dict>
 </dict>

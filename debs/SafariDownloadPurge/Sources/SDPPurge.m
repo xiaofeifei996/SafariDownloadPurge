@@ -2,6 +2,7 @@
 #import "SDPConfig.h"
 #import <objc/message.h>
 #import "SDPPrivate.h"
+#import "SDPQueue.h"
 
 // Types a user tends to keep on disk: installers and archives. Purging them
 // together with the Safari entry is usually a mistake, so they survive by
@@ -162,6 +163,7 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSMutableArray<NSString *> *removed = [NSMutableArray array];
     NSMutableSet<NSString *> *handled = [NSMutableSet set];
+    NSMutableArray<NSString *> *deferred = [NSMutableArray array];
 
     for (id record in downloads) {
         NSString *path = SDPCanonicalPath(SDPFileURLForDownload(record).path);
@@ -199,8 +201,15 @@ static NSSet<NSString *> *SDPPathsStillReferenced(_SFDownloadManager *manager,
             NSLog(@"[SafariDownloadPurge] removed: %@", path);
             [removed addObject:path];
         } else {
-            NSLog(@"[SafariDownloadPurge] failed %@: %@", path, error.localizedDescription);
+            // Safari may lack the sandbox extension for the Downloads container;
+            // hand the path to the SpringBoard fallback instead of giving up.
+            NSLog(@"[SafariDownloadPurge] deferred %@: %@", path, error.localizedDescription);
+            [deferred addObject:path];
+            [removed addObject:path];
         }
+    }
+    if (deferred.count > 0) {
+        [SDPQueue sdp_enqueuePaths:deferred];
     }
     return removed;
 }
