@@ -1,6 +1,7 @@
 #import "SDPRootListController.h"
 #import "SDPConfig.h"
 #import "SDPQueue.h"
+#import "SDPDebug.h"
 #import <Preferences/PSSpecifier.h>
 #import <UIKit/UIKit.h>
 
@@ -14,6 +15,7 @@
     if (!_specifiers) {
         NSMutableArray *items = [[self loadSpecifiersFromPlistName:@"SDPRoot"
                                                            target:self] mutableCopy];
+
         // A group cell renders its footer only from the footerText property, so
         // the diagnostics text is assigned here instead of fetched.
         PSSpecifier *diagnostics = [PSSpecifier preferenceSpecifierNamed:@"运行状态"
@@ -26,15 +28,64 @@
         [diagnostics setProperty:[self sdp_diagnosticsText] forKey:@"footerText"];
         self.diagnosticsSpecifier = diagnostics;
         [items addObject:diagnostics];
+
+        [items addObject:[PSSpecifier preferenceSpecifierNamed:@"日志"
+                                                        target:self
+                                                           set:nil
+                                                           get:nil
+                                                        detail:nil
+                                                          cell:PSGroupCell
+                                                          edit:nil]];
+        [self sdp_addButton:@"查看运行日志" action:@selector(sdp_showLog:) to:items];
+        [self sdp_addButton:@"清空日志" action:@selector(sdp_clearLog:) to:items];
+
         _specifiers = items;
     }
     return _specifiers;
+}
+
+- (void)sdp_addButton:(NSString *)title action:(SEL)action to:(NSMutableArray *)items {
+    PSSpecifier *button = [PSSpecifier preferenceSpecifierNamed:title
+                                                         target:self
+                                                            set:nil
+                                                            get:nil
+                                                         detail:nil
+                                                           cell:PSButtonCell
+                                                           edit:nil];
+    button.buttonAction = action;
+    [items addObject:button];
 }
 
 - (NSString *)sdp_diagnosticsText {
     NSString *pending = [NSString stringWithFormat:@"待清理队列：%lu 项\n\n",
                          (unsigned long)[SDPQueue sdp_pendingCount]];
     return [pending stringByAppendingString:[SDPConfig sdp_diagnostics]];
+}
+
+- (void)sdp_showLog:(id)sender {
+    UITextView *view = [[UITextView alloc] initWithFrame:CGRectZero];
+    view.editable = NO;
+    view.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
+    view.text = [SDPDebug sdp_recentLogWithLimit:120];
+    view.textContainerInset = UIEdgeInsetsMake(12, 12, 12, 12);
+
+    UIViewController *controller = [[UIViewController alloc] init];
+    controller.title = @"运行日志";
+    controller.view.backgroundColor = UIColor.systemBackgroundColor;
+    view.translatesAutoresizingMaskIntoConstraints = NO;
+    [controller.view addSubview:view];
+    [NSLayoutConstraint activateConstraints:@[
+        [view.topAnchor constraintEqualToAnchor:controller.view.topAnchor],
+        [view.bottomAnchor constraintEqualToAnchor:controller.view.bottomAnchor],
+        [view.leadingAnchor constraintEqualToAnchor:controller.view.leadingAnchor],
+        [view.trailingAnchor constraintEqualToAnchor:controller.view.trailingAnchor],
+    ]];
+    [self.navigationController pushViewController:controller animated:YES];
+}
+
+- (void)sdp_clearLog:(id)sender {
+    [SDPDebug sdp_clearLog];
+    [self reloadSpecifiers];
 }
 
 - (id)readPreferenceValue:(PSSpecifier *)specifier {

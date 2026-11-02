@@ -1,32 +1,30 @@
 #import "SDPToast.h"
 #import <UIKit/UIKit.h>
 
-@implementation SDPToast
-
-+ (UIWindow *)sdp_keyWindow {
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) {
-            continue;
-        }
-        UIWindowScene *windowScene = (UIWindowScene *)scene;
-        for (UIWindow *window in windowScene.windows) {
-            if (window.isKeyWindow) {
-                return window;
-            }
-        }
-        if (windowScene.windows.count > 0) {
-            return windowScene.windows.firstObject;
-        }
-    }
-    return nil;
-}
-
-+ (void)sdp_showRemovedCount:(NSUInteger)count {
-    if (count == 0) {
+static void SDPShowToast(NSString *text) {
+    if (text.length == 0) {
         return;
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *window = [self sdp_keyWindow];
+        UIWindow *window = nil;
+        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (![scene isKindOfClass:[UIWindowScene class]]) {
+                continue;
+            }
+            UIWindowScene *windowScene = (UIWindowScene *)scene;
+            for (UIWindow *candidate in windowScene.windows) {
+                if (candidate.isKeyWindow) {
+                    window = candidate;
+                    break;
+                }
+            }
+            if (!window && windowScene.windows.count > 0) {
+                window = windowScene.windows.firstObject;
+            }
+            if (window) {
+                break;
+            }
+        }
         if (!window) {
             return;
         }
@@ -39,7 +37,7 @@
 
         UILabel *label = [[UILabel alloc] init];
         label.translatesAutoresizingMaskIntoConstraints = NO;
-        label.text = [NSString stringWithFormat:@"已同步删除 %lu 个文件", (unsigned long)count];
+        label.text = text;
         label.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
         label.textColor = UIColor.whiteColor;
         label.textAlignment = NSTextAlignmentCenter;
@@ -73,6 +71,23 @@
             }];
         }];
     });
+}
+
+@implementation SDPToast
+
++ (void)sdp_showRemovedCount:(NSUInteger)count {
+    if (count == 0) {
+        return;
+    }
+    SDPShowToast([NSString stringWithFormat:@"已同步删除 %lu 个文件", (unsigned long)count]);
+}
+
++ (void)sdp_showProtectedCount:(NSUInteger)count {
+    if (count == 0) {
+        return;
+    }
+    SDPShowToast([NSString stringWithFormat:@"插件已关闭，已还原 %lu 个文件",
+                  (unsigned long)count]);
 }
 
 @end

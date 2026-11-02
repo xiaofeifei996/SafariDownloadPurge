@@ -13,6 +13,8 @@
 - (long long)state;
 - (BOOL)isIdle;
 - (NSDate *)dateAdded;
+- (BOOL)removeFromDisk;
+- (void)removeDataAndPlaceholderFromDisk;
 @end
 
 @interface _SFDownloadManager : NSObject

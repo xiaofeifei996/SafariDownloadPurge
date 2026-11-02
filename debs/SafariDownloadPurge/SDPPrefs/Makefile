@@ -2,7 +2,8 @@ include ../SDPBuild.mk
 include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = SDPPrefs
-SDPPrefs_FILES = $(wildcard *.m) ../Sources/SDPConfig.m ../Sources/SDPPaths.m ../Sources/SDPQueue.m
+SDPPrefs_FILES = $(wildcard *.m) ../Sources/SDPConfig.m ../Sources/SDPPaths.m \
+	../Sources/SDPQueue.m ../Sources/SDPDebug.m
 SDPPrefs_CFLAGS = -fobjc-arc -I../Sources
 SDPPrefs_FRAMEWORKS = UIKit Foundation CoreFoundation
 SDPPrefs_PRIVATE_FRAMEWORKS = Preferences
