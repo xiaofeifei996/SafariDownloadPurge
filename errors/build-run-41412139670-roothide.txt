@@ -1,0 +1,16 @@
+
+Building roothide
+[0;36m==> [1;39mCleaning…[m
+[1;31m> [1;3;39mMaking clean in SDPPrefs…[m
+[0;36m==> [1;39mCleaning…[m
+[1;31m> [1;3;39mMaking all for tweak SafariDownloadPurge…[m
+[0;32m==> [1;39mCompiling Hooks/SDPDownloads.mm (arm64)…[m
+[0;32m==> [1;39mCompiling Hooks/SDPDrain.mm (arm64)…[m
+[1mHooks/SDPDrain.mm:78:14: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'SDPToast'[0m
+            [SDPToast sdp_showProtectedCount:restored];
+[0;1;32m             ^
+[0m1 error generated.
+make[3]: *** [/Users/runner/work/SafariDownloadPurge/SafariDownloadPurge/debs/SafariDownloadPurge/.theos/obj/arm64/Hooks/SDPDrain.mm.e4ee91b2.o] Error 1
+make[2]: *** [/Users/runner/work/SafariDownloadPurge/SafariDownloadPurge/debs/SafariDownloadPurge/.theos/obj/arm64/SafariDownloadPurge.dylib] Error 2
+make[1]: *** [internal-library-all_] Error 2
+make: *** [SafariDownloadPurge.all.tweak.variables] Error 2
