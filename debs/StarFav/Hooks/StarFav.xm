@@ -46,7 +46,6 @@ static UIButton *SFButtonForStack(UIView *stack) {
 
     btn = [UIButton buttonWithType:UIButtonTypeCustom];
     btn.bounds = CGRectMake(0, 0, 44, 44);
-    btn.adjustsImageWhenHighlighted = NO;
     btn.exclusiveTouch = NO;
     [btn setImage:SFStarImage(NO) forState:UIControlStateNormal];
     btn.tintColor = [UIColor colorWithWhite:1.0 alpha:0.92];
@@ -74,14 +73,15 @@ static void SFUpdateButtonImages(void) {
     }
 }
 
-static void SFLayoutStar(UIView *stack) {
+static void SFLayoutStar(id stackView) {
+    UIView *stack = (UIView *)stackView;
     SFNowPlaying *s = [SFNowPlaying shared];
     UIButton *btn = SFButtonForStack(stack);
 
     // anchor: native transport button (both MediaControls + MRU stacks expose leftButton)
     UIView *anchor = nil;
     if ([stack respondsToSelector:NSSelectorFromString(@"leftButton")]) {
-        anchor = [stack performSelector:NSSelectorFromString(@"leftButton")];
+        anchor = [stack valueForKey:@"leftButton"];
     }
 
     BOOL visible = s.hasTrack && s.canLike;
