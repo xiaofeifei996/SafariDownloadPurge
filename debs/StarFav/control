@@ -1,9 +1,0 @@
-Package: com.axs.starfav
-Name: 星标收藏
-Version: 1.0.0
-Architecture: iphoneos-arm
-Description: 在 iOS 16 锁屏与控制中心的播放器上加入 iOS 17 风格的 ☆/★ 收藏按钮。点击星标即可通过系统 LikeTrack 命令收藏/取消收藏当前歌曲，支持 Apple Music 等实现该命令的播放器；收藏状态读取系统 now playing 的 IsLiked 字段，无该字段时按曲目本地记忆。
-Maintainer: Axs
-Author: Axs
-Section: Tweaks
-Depends: mobilesubstrate, firmware (>= 16.0)
