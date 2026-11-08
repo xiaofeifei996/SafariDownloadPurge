@@ -1,0 +1,9 @@
+Package: com.axs.starfav
+Name: 星标收藏
+Version: 1.1.0
+Architecture: iphoneos-arm
+Description: 在 iOS 16 锁屏与控制中心的播放器上加入 iOS 17 风格的 ☆/★ 收藏按钮。点击星标通过系统 LikeTrack 命令收藏，并联动注入汽水音乐的桥接层（com.soda.music）触发其 App 内收藏。
+Maintainer: Axs
+Author: Axs
+Section: Tweaks
+Depends: mobilesubstrate, firmware (>= 16.0)

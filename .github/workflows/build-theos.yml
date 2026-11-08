@@ -18,7 +18,7 @@ env:
 jobs:
   build:
     name: Build (${{ matrix.build_variant }})
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.4'
+          xcode-version: '16.0'
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,20 +68,28 @@ jobs:
           brew install ldid dpkg xz
           echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
 
-      - name: Build Package
+      - name: Build Theos Projects
         run: |
           set -o pipefail
-          cd debs/SafariDownloadPurge
-          sh build.sh "${{ matrix.build_variant }}" 2>&1 | tee /tmp/build.log
+          : > /tmp/build.log
+          for dir in debs/*/; do
+            if [ ! -f "${dir}Makefile" ]; then
+              continue
+            fi
+            echo "===== Building ${dir} (${{ matrix.build_variant }}) ====="
+            ( cd "$dir" && sh build.sh "${{ matrix.build_variant }}" ) 2>&1 | tee -a /tmp/build.log
+          done
           echo "=== .deb files ==="
-          find ./packages -name "*.deb" -type f
+          find debs -name "*.deb" -type f
 
       - name: Collect artifacts
         if: always()
         run: |
           set -eu
           mkdir -p out
-          cp debs/SafariDownloadPurge/packages/*.deb out/ 2>/dev/null || true
+          for dir in debs/*/; do
+            cp "${dir}"packages/*.deb out/ 2>/dev/null || true
+          done
           cp /tmp/build.log out/build-${{ matrix.build_variant }}.log 2>/dev/null || true
           ls -l out
 
