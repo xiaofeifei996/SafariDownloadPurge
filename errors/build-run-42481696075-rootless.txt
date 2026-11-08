@@ -1,0 +1,69 @@
+
+Building rootless
+[0;36m==> [1;39mCleaning…[m
+[1;31m> [1;3;39mMaking clean in SDPPrefs…[m
+[0;36m==> [1;39mCleaning…[m
+[1;31m> [1;3;39mMaking all for tweak SafariDownloadPurge…[m
+[0;32m==> [1;39mCompiling Hooks/SDPDownloads.mm (arm64)…[m
+[0;32m==> [1;39mCompiling Hooks/SDPDrain.mm (arm64)…[m
+[0;32m==> [1;39mCompiling Hooks/SDPGuard.mm (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPConfig.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPDebug.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPPaths.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPProtect.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPPurge.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPQueue.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPRuntime.m (arm64)…[m
+[0;32m==> [1;39mCompiling Sources/SDPToast.m (arm64)…[m
+[0;33m==> [1;39mLinking tweak SafariDownloadPurge (arm64)…[m
+ld: warning: -multiply_defined is obsolete
+[0;34m==> [1;39mGenerating debug symbols for SafariDownloadPurge…[m
+[0;34m==> [1;39mStripping SafariDownloadPurge (arm64)…[m
+[0;32m==> [1;39mCompiling Hooks/SDPDownloads.mm (arm64e)…[m
+[0;32m==> [1;39mCompiling Hooks/SDPDrain.mm (arm64e)…[m
+[0;32m==> [1;39mCompiling Hooks/SDPGuard.mm (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPConfig.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPDebug.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPPaths.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPProtect.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPPurge.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPQueue.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPRuntime.m (arm64e)…[m
+[0;32m==> [1;39mCompiling Sources/SDPToast.m (arm64e)…[m
+[0;33m==> [1;39mLinking tweak SafariDownloadPurge (arm64e)…[m
+ld: warning: -multiply_defined is obsolete
+[0;34m==> [1;39mGenerating debug symbols for SafariDownloadPurge…[m
+[0;34m==> [1;39mStripping SafariDownloadPurge (arm64e)…[m
+[0;34m==> [1;39mMerging tweak SafariDownloadPurge…[m
+[0;34m==> [1;39mSigning SafariDownloadPurge…[m
+[1;31m> [1;3;39mMaking all in SDPPrefs…[m
+[1;31m> [1;3;39mMaking all for bundle SDPPrefs…[m
+[0;35m==> [1;39mCopying resource directories into the bundle wrapper…[m
+[0;32m==> [1;39mCompiling SDPRootListController.m (arm64)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPConfig.m (arm64)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPPaths.m (arm64)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPQueue.m (arm64)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPDebug.m (arm64)…[m
+[0;33m==> [1;39mLinking bundle SDPPrefs (arm64)…[m
+ld: warning: -multiply_defined is obsolete
+ld: warning: -undefined dynamic_lookup is deprecated on iOS
+[0;34m==> [1;39mGenerating debug symbols for SDPPrefs…[m
+[0;34m==> [1;39mStripping SDPPrefs (arm64)…[m
+[0;32m==> [1;39mCompiling SDPRootListController.m (arm64e)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPConfig.m (arm64e)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPPaths.m (arm64e)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPQueue.m (arm64e)…[m
+[0;32m==> [1;39mCompiling ../Sources/SDPDebug.m (arm64e)…[m
+[0;33m==> [1;39mLinking bundle SDPPrefs (arm64e)…[m
+ld: warning: -multiply_defined is obsolete
+ld: warning: -undefined dynamic_lookup is deprecated on iOS
+ld: warning: -undefined dynamic_lookup is deprecated on iOS
+[0;34m==> [1;39mGenerating debug symbols for SDPPrefs…[m
+[0;34m==> [1;39mStripping SDPPrefs (arm64e)…[m
+[0;34m==> [1;39mMerging bundle SDPPrefs…[m
+[0;34m==> [1;39mSigning SDPPrefs…[m
+[1;31m> [1;3;39mMaking stage for tweak SafariDownloadPurge…[m
+[1;31m> [1;3;39mMaking stage in SDPPrefs…[m
+[1;31m> [1;3;39mMaking stage for bundle SDPPrefs…[m
+dm.pl: building package `com.axs.safaridownloadpurge:iphoneos-arm64' in `./packages/com.axs.safaridownloadpurge_1.1.8_iphoneos-arm64.deb'
+sh: build.sh: No such file or directory
