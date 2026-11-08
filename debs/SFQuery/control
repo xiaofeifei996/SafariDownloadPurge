@@ -1,6 +1,6 @@
 Package: com.axs.sfquery
 Name: SF Query (temp)
-Version: 1.0.1
+Version: 1.0.2
 Architecture: iphoneos-arm
 Description: Temporary supported-commands probe. Will be removed after debugging.
 Maintainer: Axs

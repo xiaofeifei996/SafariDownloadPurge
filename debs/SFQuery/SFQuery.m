@@ -32,29 +32,36 @@ static NSString *SFDescribeDict(CFDictionaryRef d) {
 }
 
 __attribute__((constructor)) static void SFQueryInit(void) {
+    // 关键：全程在后台队列执行，绝不阻塞主线程（否则看门狗杀进程）
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4 * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), ^{
+                   dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        dispatch_queue_t q = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0);
+        NSMutableString *report = [NSMutableString stringWithFormat:
+            @"=== SFQuery pid=%d time=%@ ===\n", getpid(), [NSDate date]];
+
         void *h = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_LAZY);
-        if (!h) { SFWriteReport(@"dlopen MediaRemote failed"); return; }
+        if (!h) { SFWriteReport([report stringByAppendingString:@"dlopen failed\n"]); return; }
         QueryCmds = (MRCopySupportedCmdsFunc)dlsym(h, "MRMediaRemoteCopySupportedCommands");
         GetInfo    = (MRGetInfoFunc)dlsym(h, "MRMediaRemoteGetNowPlayingInfo");
-        if (!QueryCmds) { SFWriteReport(@"symbol not found"); return; }
-
-        NSMutableString *report = [NSMutableString stringWithFormat:
-            @"=== SFQuery pid=%d time=%@ ===\n", getpid(),
-            [NSDate date]];
+        if (!QueryCmds) { SFWriteReport([report stringByAppendingString:@"symbol not found\n"]); return; }
 
         dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-        QueryCmds(dispatch_get_main_queue(), ^(CFArrayRef cmds) {
+        [report appendString:@"asking supported commands...\n"];
+        SFWriteReport(report);
+
+        QueryCmds(q, ^(CFArrayRef cmds) {
             [report appendFormat:@"SUPPORTED COMMANDS: %@\n", (__bridge NSArray *)cmds];
             dispatch_semaphore_signal(sem);
         });
         dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)));
 
+        [report appendString:@"asking now playing info...\n"];
+        SFWriteReport(report);
+
         if (GetInfo) {
-            GetInfo(dispatch_get_main_queue(), ^(CFDictionaryRef info) {
-                [report appendFormat:@"NOW PLAYING INFO:\n%@", SFDescribeDict(info)];
+            GetInfo(q, ^(CFDictionaryRef info) {
+                [report appendFormat:@"NOW PLAYING INFO:\n%@\n", SFDescribeDict(info)];
                 dispatch_semaphore_signal(sem);
             });
             dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)));
